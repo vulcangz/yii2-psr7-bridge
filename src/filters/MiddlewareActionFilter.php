@@ -102,8 +102,8 @@ class MiddlewareActionFilter extends ActionFilter implements RequestHandlerInter
     public function handle(ServerRequestInterface $request) : ResponseInterface
     {
         $this->request = $request;
-        return new \Zend\Diactoros\Response\EmptyResponse(
-            $this->continueStatusCode
+        return new \Nyholm\Psr7\web\EmptyResponse(
+            $this->continueStatusCode   // ? 204 
         );
     }
 }

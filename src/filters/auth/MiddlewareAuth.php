@@ -117,7 +117,7 @@ class MiddlewareAuth extends AuthMethod implements AuthInterface, RequestHandler
      */
     public function handle(ServerRequestInterface $request) : ResponseInterface
     {
-       return new \Zend\Diactoros\Response\EmptyResponse(
+       return new \Nyholm\Psr7\web\EmptyResponse(
            $this->continueStatusCode,
            [
                static::TOKEN_ATTRIBUTE_NAME => $request->getAttribute($this->attribute)
