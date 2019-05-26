@@ -1,5 +1,5 @@
 {
-    "name": "charlesportwoodii/yii2-psr7-bridge",
+    "name": "vulcangz/yii2-psr7-bridge",
     "description": "A PSR7 Bridge for Yii2",
     "type": "library",
     "license": "BSD-3-Clause",
@@ -7,6 +7,10 @@
         {
             "name": "Charles R. Portwood II",
             "email": "charlesportwoodii@erianna.com"
+        },
+        {
+            "name": "vulcangz",
+            "email": "zhugd168@163.com"
         }
     ],
     "minimum-stability": "stable",
