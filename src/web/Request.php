@@ -7,10 +7,10 @@ use Psr\Http\Message\ServerRequestInterface;
 use Yii;
 
 use yii\base\InvalidConfigException;
-use yii\validators\IpValidator;
 use yii\web\HeaderCollection;
 use yii\web\NotFoundHttpException;
 use yii\web\RequestParserInterface;
+use yii\helpers\ArrayHelper;
 
 class Request extends \yii\web\Request
 {
@@ -87,13 +87,22 @@ class Request extends \yii\web\Request
     }
 
     /**
-     * @inheritdoc
+     * Resolves the current request into a route and the associated parameters.
+     * @return array the first element is the route, and the second is the associated parameters.
+     * @throws NotFoundHttpException if the request cannot be resolved.
      */
     public function resolve()
     {
         $result = Yii::$app->getUrlManager()->parseRequest($this);
         if ($result !== false) {
             list($route, $params) = $result;
+            if ($this->_queryParams === null) {
+                // !important
+                $_GET = $params + $_GET; // preserve numeric keys
+            } else {
+                $this->_queryParams = $params + $this->_queryParams;
+            }
+
             return [$route, $this->getQueryParams()];
         }
 
@@ -107,7 +116,7 @@ class Request extends \yii\web\Request
     {
         if ($this->_headers === null) {
             $this->_headers = new HeaderCollection;
-            foreach ($this->getPsr7Request()->getHeaders() as $name => $values) {
+            foreach ($this->psr7Request->getHeaders() as $name => $values) {
                 foreach ($values as $value) {
                     $this->_headers->add($name, $value);
                 }
@@ -123,7 +132,7 @@ class Request extends \yii\web\Request
      */
     public function getMethod()
     {
-        return $this->getPsr7Request()->getMethod();
+        return $this->psr7Request->getMethod();
     }
 
     /**
@@ -132,7 +141,7 @@ class Request extends \yii\web\Request
     public function getRawBody()
     {
         if ($this->_rawBody === null) {
-            $request = clone $this->getPsr7Request();
+            $request = clone $this->psr7Request;
             $body = $request->getBody();
             $body->rewind();
             $this->setRawBody((string)$body->getContents());
@@ -177,7 +186,7 @@ class Request extends \yii\web\Request
                 $this->_bodyParams = $parser->parse($this->getRawBody(), $rawContentType);
             } elseif ($this->getMethod() === 'POST') {
                 // PHP has already parsed the body so we have all params in $_POST
-                $this->_bodyParams = $this->getPsr7Request()->getParsedBody();
+                $this->_bodyParams = $this->psr7Request->getParsedBody();
             } else {
                 $this->_bodyParams = [];
                 mb_parse_str($this->getRawBody(), $this->_bodyParams);
@@ -196,11 +205,19 @@ class Request extends \yii\web\Request
     }
 
     /**
-     * @inheritdoc
+     * Returns the request parameters given in the [[queryString]].
+     *
+     * This method will return the contents of `$_GET` if params where not explicitly set.
+     * @return array the request GET parameter values.
+     * @see setQueryParams()
      */
     public function getQueryParams()
     {
-        return $this->getPsr7Request()->getQueryParams();
+        if ($this->_queryParams === null) {
+            return $_GET;
+        }
+
+        return $this->_queryParams;
     }
 
     /**
@@ -276,7 +293,7 @@ class Request extends \yii\web\Request
      */
     protected function resolveRequestUri()
     {
-        $uri = $this->getPsr7Request()->getUri();
+        $uri = $this->psr7Request->getUri();
         $requestUri =  $uri->getPath();
         $queryString = $this->getQueryString();
         if ($queryString !== '') {
@@ -295,7 +312,7 @@ class Request extends \yii\web\Request
      */
     public function getQueryString()
     {
-        return $this->getPsr7Request()->getUri()->getQuery();
+        return $this->psr7Request->getUri()->getQuery();
     }
 
     /**
@@ -303,7 +320,8 @@ class Request extends \yii\web\Request
      */
     public function getServerParams()
     {
-        return $this->getPsr7Request()->getServerParams();
+        return $this->psr7Request->getServerParams();
+        //return $this->getPsr7Request()->getServerParams();        
     }
 
     /**
@@ -311,7 +329,7 @@ class Request extends \yii\web\Request
      */
     public function getIsSecureConnection()
     {
-        if ($this->getPsr7Request()->getUri()->getScheme() === 'https') {
+        if ($this->psr7Request->getUri()->getScheme() === 'https') {
             return true;
         }
 
@@ -333,7 +351,7 @@ class Request extends \yii\web\Request
      */
     public function getServerName()
     {
-        return $this->getPsr7Request()->getUri()->getHost();
+        return $this->psr7Request->getUri()->getHost();
     }
 
     /**
@@ -341,7 +359,7 @@ class Request extends \yii\web\Request
      */
     public function getServerPort()
     {
-        return $this->getPsr7Request()->getUri()->getPort();
+        return $this->psr7Request->getUri()->getPort();
     }
 
     /**
@@ -377,7 +395,7 @@ class Request extends \yii\web\Request
                 throw new InvalidConfigException(get_class($this) . '::cookieValidationKey must be configured with a secret key.');
             }
 
-            foreach ($this->getPsr7Request()->getCookieParams() as $name => $value) {
+            foreach ($this->psr7Request->getCookieParams() as $name => $value) {
                 if (!is_string($value)) {
                     continue;
                 }
@@ -400,7 +418,7 @@ class Request extends \yii\web\Request
                 }
             }
         } else {
-            foreach ($this->getPsr7Request()->getCookieParams() as $name => $value) {
+            foreach ($this->psr7Request->getCookieParams() as $name => $value) {
                 $cookies[$name] = Yii::createObject([
                     'class' => 'yii\web\Cookie',
                     'name' => $name,
@@ -425,7 +443,7 @@ class Request extends \yii\web\Request
      */
     public function getAttributes()
     {
-        return $this->getPsr7Request()->getAttributes();
+        return $this->psr7Request->getAttributes();
     }
 
     /**
@@ -445,7 +463,7 @@ class Request extends \yii\web\Request
      */
     public function getAttribute($name, $default = null)
     {
-        return $this->getPsr7Request()->getAttribute($name, $default);
+        return $this->psr7Request->getAttribute($name, $default);
     }
     
     /**
