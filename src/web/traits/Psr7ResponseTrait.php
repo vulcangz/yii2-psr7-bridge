@@ -3,7 +3,7 @@
 namespace yii\Psr7\web\traits;
 
 use Psr\Http\Message\ResponseInterface;
-//use Zend\Diactoros\Response;
+use Zend\Diactoros\Response;
 use yii\base\InvalidConfigException;
 use yii\web\Cookie;
 use Yii;
@@ -49,15 +49,15 @@ trait Psr7ResponseTrait
             $session->close();
         }
 
-        //$response = new Response(
-          //  $stream,
-          //  $this->getStatusCode()
-        //);
+        $response = new Response(
+            $stream,
+            $this->getStatusCode()
+        );
         
         // https://github.com/Nyholm/psr7#emitting-a-response
-        $psr17Factory = new \Nyholm\Psr7\Factory\Psr17Factory();
-        $responseBody = $psr17Factory->createStreamFromResource($stream);
-        $response = $psr17Factory->createResponse($this->getStatusCode())->withBody($responseBody);
+        //$psr17Factory = new \Nyholm\Psr7\Factory\Psr17Factory();
+        //$responseBody = $psr17Factory->createStreamFromResource($stream);
+        //$response = $psr17Factory->createResponse($this->getStatusCode())->withBody($responseBody);
 
         // Manually set headers to ensure array headers are added.
         foreach ($this->getPsr7Headers() as $header => $value) {
